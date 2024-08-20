@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>Login and Connect to WebSocket</h1>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" value="testuser" required>
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" value="password123" required>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    <p id="message"></p>
+    <script>
+        let socket;
+
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Authenticate and get token
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) throw new Error('Failed to authenticate');
+                console.log('Authenticated');
+                const { token } = await response.json();
+                console.log(token);
+                // Establish WebSocket connection using the token
+                socket = new WebSocket('http://localhost:3000'); // ws for non-secure or wss for secure
+
+                socket.onopen = () => {
+                    console.log('WebSocket connection opened');
+                   
+                };
+
+                socket.onmessage = (event) => {
+                    console.log('Message from server:', event.data);
+                };
+
+                socket.onclose = () => {
+                    console.log('WebSocket connection closed');
+                };
+
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
