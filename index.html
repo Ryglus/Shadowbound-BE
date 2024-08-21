@@ -6,62 +6,74 @@
     <title>WebSocket Test</title>
 </head>
 <body>
-    <h1>Login and Connect to WebSocket</h1>
-    <form id="loginForm">
-        <label for="username">Username:</label>
-        <input type="text" id="username" value="testuser" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" value="password123" required>
-        <br>
-        <button type="submit">Login</button>
-    </form>
-    <p id="message"></p>
-    <script>
-        let socket;
+<h1>Login and Connect to WebSocket</h1>
+<form id="loginForm">
+    <label for="username">Username:</label>
+    <input type="text" id="username" value="testuser" required>
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" value="password123" required>
+    <br>
+    <button type="submit">Login</button>
+</form>
+<p id="message"></p>
+<script>
+    let socket;
+    let reconnectInterval = 5000; // 5 seconds
+    connectWebSocket("asdasd")
+    function connectWebSocket(token) {
+        socket = new WebSocket("http://localhost:3000",["Authorization", token]);
 
-        document.getElementById('loginForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        socket.onopen = () => {
+            console.log('WebSocket connection opened');
+            // Optionally, send a message or authenticate with the token
+            // socket.send(JSON.stringify({ token: token }));
+        };
 
-            try {
-                // Authenticate and get token
-                const response = await fetch('http://localhost:3000/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
+        socket.onmessage = (event) => {
+            console.log('Message from server:', event.data);
+        };
 
-                if (!response.ok) throw new Error('Failed to authenticate');
-                console.log('Authenticated');
-                const { token } = await response.json();
-                console.log(token);
-                // Establish WebSocket connection using the token
-                socket = new WebSocket('http://localhost:3000'); // ws for non-secure or wss for secure
+        socket.onclose = () => {
+            console.log('WebSocket connection closed. Reconnecting in 5 seconds...');
+            setTimeout(() => {
+                connectWebSocket(token);
+            }, reconnectInterval);
+        };
 
-                socket.onopen = () => {
-                    console.log('WebSocket connection opened');
-                   
-                };
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    }
 
-                socket.onmessage = (event) => {
-                    console.log('Message from server:', event.data);
-                };
+    document.getElementById('loginForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-                socket.onclose = () => {
-                    console.log('WebSocket connection closed');
-                };
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
 
-                socket.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                };
+        try {
+            // Authenticate and get token
+            /*
+            const response = await fetch('http://localhost:3000/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        });
-    </script>
+            if (!response.ok) throw new Error('Failed to authenticate');
+             */
+            console.log('Authenticated');
+            const token = "asdasd"
+            console.log(token);
+            // Establish WebSocket connection using the token
+            connectWebSocket(token);
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+</script>
 </body>
 </html>

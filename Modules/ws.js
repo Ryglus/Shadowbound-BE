@@ -10,8 +10,8 @@ console.log('WebSocket is running on port 3000');
 function setupWebSocket(server) {
     server.on('upgrade', (request, socket, head) => {
         console.log('Handling upgrade for client');
-        console.log(request.headers['sec-websocket-key'])
-        const token = request.headers['Authorization'];
+        console.log(request.rawHeaders[request.rawHeaders.length-1]);
+        const token = request.rawHeaders['Authorization'];
         console.log('Authorization token:', token);
 
         wss.handleUpgrade(request, socket, head, (ws) => {
