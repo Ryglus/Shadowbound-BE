@@ -3,19 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Test</title>
+    <title>Shadowbound Test</title>
+    <style>
+        /* Container for forms */
+        .form-container {
+            display: flex;
+            gap: 5px; /* Optional: Adds space between the forms */
+        }
+        /* Individual form styling */
+        .form-container form {
+            flex: 1; /* Allows forms to grow and take up available space */
+            padding: 5px; /* Optional: Adds padding inside the forms */
+            border: 1px solid #ccc; /* Optional: Adds border around forms */
+            border-radius: 5px; /* Optional: Rounds corners of the border */
+        }
+    </style>
 </head>
 <body>
-<h1>Login and Connect to WebSocket</h1>
-<form id="loginForm">
-    <label for="username">Username:</label>
-    <input type="text" id="username" value="testuser" required>
-    <br>
-    <label for="password">Password:</label>
-    <input type="password" id="password" value="password123" required>
-    <br>
-    <button type="submit">Login</button>
-</form>
+<h1>Shadowbound Test</h1>
+<div class="form-container">
+    <form id="loginForm">
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" value="testuser" required>
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" value="password123" required>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+
+    <form id="registerForm">
+        <h2>Register</h2>
+        <label for="usernamer">Username:</label>
+        <input type="text" id="usernamer" value="testuser" required>
+        <br>
+        <label for="passwordr">Password:</label>
+        <input type="password" id="passwordr" value="password123" required>
+        <br>
+        <button type="submit">Register</button>
+    </form>
+</div>
+
 <p id="message"></p>
 
 <hr>
@@ -35,7 +64,20 @@
 
     <h3>Available Items</h3>
     <button id="refreshItemsButton">Refresh Items</button>
-    <ul id="availableItems"></ul>
+    <h2>Available Items</h2>
+    <table id="availableItems">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Data will be dynamically added here -->
+        </tbody>
+    </table>
 </div>
 
 <script>
@@ -93,7 +135,33 @@
             console.error('Error:', error);
         }
     });
+    document.getElementById('registerForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
 
+        const username = document.getElementById('usernamer').value;
+        const password = document.getElementById('passwordr').value;
+
+        try {
+            const response = await fetch('http://localhost:3000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) throw new Error('Failed to authenticate');
+
+            const data = await response.json();
+            token = data.token;
+
+            connectWebSocket(token);
+
+            // Show the exchange section after successful login
+            document.getElementById('exchangeSection').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
     document.getElementById('listItemForm').addEventListener('submit', async (event) => {
         event.preventDefault();
 
@@ -131,20 +199,25 @@
             if (!response.ok) throw new Error('Failed to fetch items');
 
             const items = await response.json();
-            console.log(items)
-            const itemsList = document.getElementById('availableItems');
-            itemsList.innerHTML = ''; // Clear the list
-
-            items.forEach(item => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `${item.itemName} - ${item.price} gold`;
-                itemsList.appendChild(listItem);
-            });
+            updateItemsTable(items)
 
         } catch (error) {
             console.error('Error fetching items:', error);
         }
     });
+
+    function updateItemsTable(items) {
+        const tableBody = document.getElementById('availableItems').getElementsByTagName('tbody')[0];
+
+        items.forEach(item => {
+            const row = tableBody.insertRow();
+            for (const itemKey of Object.keys(item)) {
+                const cell = row.insertCell(Object.keys(item).indexOf(itemKey));
+                cell.textContent = item[itemKey];
+            }
+
+        });
+    }
 </script>
 </body>
 </html>
