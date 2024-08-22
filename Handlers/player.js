@@ -1,5 +1,4 @@
 const { getDb } = require('../modules/db');
-const { broadcast } = require('../modules/ws');
 
 async function handleMovement(data, ws) {
     const db = getDb();

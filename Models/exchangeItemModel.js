@@ -1,13 +1,13 @@
-class ExchangeItem {
-    constructor(sellerId, itemName, price) {
+class ExchangeListingModel {
+    constructor(sellerId, item, price) {
         this.sellerId = sellerId;
-        this.itemName = itemName;
+        this.item = item; // Expecting an instance of ItemModel
         this.price = price;
         this.listedAt = new Date();
         this.sold = false;
     }
 
-    // Optionally add methods to validate or manipulate item data
+    // Optionally add methods to validate or manipulate listing data
 }
 
-module.exports = ExchangeItem;
+module.exports = ExchangeListingModel;

@@ -1,4 +1,11 @@
 {
+  "scripts": {
+    "start": "npm run docker-compose-up && nodemon server.js",
+    "docker-compose-up": "docker compose -f /Users/rygli/WebstormProjects/Shadowbound-BE/docker-compose.yml -p shadowbound-be up -d",
+    "docker-compose-down": "docker compose -f /Users/rygli/WebstormProjects/Shadowbound-BE/docker-compose.yml -p shadowbound-be down",
+    "docker-compose-logs": "docker compose -f /Users/rygli/WebstormProjects/Shadowbound-BE/docker-compose.yml -p shadowbound-be logs",
+    "docker-compose-ps": "docker compose -f /Users/rygli/WebstormProjects/Shadowbound-BE/docker-compose.yml -p shadowbound-be ps"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
