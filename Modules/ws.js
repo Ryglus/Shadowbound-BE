@@ -1,33 +1,29 @@
 const WebSocket = require('ws');
 const { verifyToken } = require('../Services/authService');
-const { getRedis } = require('./db');
 const playerHandler = require('../Handlers/player');
 const itemHandler = require('../Handlers/item');
 
 const wss = new WebSocket.Server({ noServer: true });
-console.log('WebSocket is running on port 3000');
+const activeConnections = new Map(); // In-memory storage for active WebSocket connections
+
+console.log('WebSocket server is running on port 3000');
 
 function setupWebSocket(server) {
     server.on('upgrade', (request, socket, head) => {
         console.log('Handling upgrade for client');
-        console.log(request.rawHeaders[request.rawHeaders.length-1]);
-        const token = request.rawHeaders['Authorization'];
-        console.log('Authorization token:', token);
+        const token = request.rawHeaders[request.rawHeaders.length-1].toString().replace("Authorization, ", "");
 
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            console.log('Client connected via WebSocket');
-            wss.emit('connection', ws, request);
-        });
-    });
-
-    /*
-    server.on('upgrade', (request, socket, head) => {
-        const token = request.headers['sec-websocket-protocol'];
-        console.log('Authorization header:', token);
+        if (!token) {
+            socket.destroy(); // Reject connection if the Authorization header is missing
+            return;
+        }
 
         verifyToken(token)
             .then(user => {
                 wss.handleUpgrade(request, socket, head, ws => {
+                    console.log("Connected:", user.username);
+                    activeConnections.set(user.id, ws); // Store the WebSocket connection in memory
+
                     wss.emit('connection', ws, user);
                 });
             })
@@ -37,58 +33,43 @@ function setupWebSocket(server) {
     });
 
     wss.on('connection', (ws, user) => {
-        console.log(user);
+        ws.on('message', message => handleIncomingMessage(message, ws, user));
+        ws.on('close', () => handleDisconnection(user));
 
-        // Save the WebSocket connection in Redis for easy retrieval
-        getRedis().set(`player:${user.id}`, ws);
-
-        ws.on('message', message => {
-            try {
-                const data = JSON.parse(message);
-                switch (data.type) {
-                    case 'AUTH':
-                        console.log(data)
-                        break;
-                    case 'playerMovement':
-                        playerHandler.handleMovement(data, ws);
-                        break;
-                    case 'playerAction':
-                        playerHandler.handleAction(data, ws);
-                        break;
-                    case 'itemAction':
-                        itemHandler.handleItemAction(data, ws);
-                        break;
-                    default:
-                        console.log(`Unknown message type: ${data.type}`);
-                }
-            } catch (e) {
-                console.error('Error parsing message:', e);
-            }
-        });
-
-        ws.on('close', () => {
-            console.log(`User ${user.username} disconnected`);
-            getRedis().del(`player:${user.id}`);
-        });
+        // Optionally, send a welcome message or initial data to the client
+        ws.send(JSON.stringify({ type: 'welcome', message: `Welcome, ${user.username}!` }));
     });
 
-    // Heartbeat mechanism
     setInterval(() => {
         console.log(`Active connections: ${wss.clients.size}`);
-        wss.clients.forEach(ws => {
-            if (ws.isAlive === false) {
-                ws.terminate(); // Terminate dead connections
-                return;
-            }
-            ws.isAlive = false; // Mark connection as not alive
-            ws.ping(); // Send a ping to keep the connection alive
-        });
-    }, 30000); // Heartbeat every 30 seconds
+    }, 5000); // Log the number of active connections every 5 seconds
+}
 
-    wss.on('pong', () => {
-        this.isAlive = true; // Reset the connection status on pong response
-    });
-     */
+function handleIncomingMessage(message, ws, user) {
+    try {
+        const data = JSON.parse(message);
+        switch (data.type) {
+            case 'playerMovement':
+                playerHandler.handleMovement(data, ws);
+                break;
+            case 'playerAction':
+                playerHandler.handleAction(data, ws);
+                break;
+            case 'itemAction':
+                itemHandler.handleItemAction(data, ws);
+                break;
+            default:
+                console.log(`Unknown message type: ${data.type}`);
+        }
+    } catch (error) {
+        console.error('Error parsing message:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+    }
+}
+
+function handleDisconnection(user) {
+    console.log(`User ${user.username} disconnected`);
+    activeConnections.delete(user.id); // Remove the WebSocket connection from memory
 }
 
 module.exports = setupWebSocket;

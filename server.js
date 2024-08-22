@@ -1,19 +1,31 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors'); // Import the cors package
-const { connectToDatabase, getDb, getRedis } = require('./modules/db');
+const db = require('./modules/db');
 const setupWebSocket = require('./modules/ws');
 const authController = require('./Controllers/authController');
 const userController = require('./Controllers/userController');
+const exchangeController = require('./Controllers/exchangeController'); // Import the Exchange controller
+
 const { port } = require('./Config/config');
 
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 
-// Set up WebSocket server
-setupWebSocket(server);
+async function start() {
+    await db.connect()
+    setupWebSocket(server);
+}
 
+// Set up WebSocket server
+
+// Connect to database
+
+
+server.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -21,13 +33,7 @@ app.use(express.json());
 // Route handlers
 app.use('/api', authController);
 app.use('/api', userController);
+app.use('/api/exchange', exchangeController); // Add the Exchange routes
 
-// Connect to database
-connectToDatabase().then(() => {
-    server.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
-    });
-}).catch(error => {
-    console.error('Failed to connect to database:', error);
-    process.exit(1);
-});
+
+start();

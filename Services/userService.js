@@ -1,4 +1,4 @@
-const { getUserByUsername, createUser } = require('../handlers/user');
+const { getUserByUsername, createUser } = require('../Repositories/userRepository');
 
 async function register(username, password) {
 
@@ -10,6 +10,7 @@ async function register(username, password) {
 
 async function login(username, password) {
     const user = await getUserByUsername(username);
+
     if (!user || user.password !== password) throw new Error('Invalid credentials');
     return user;
 }

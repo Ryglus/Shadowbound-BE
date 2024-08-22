@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { updateUser, deleteUser } = require('../handlers/user');
+const { updateUser, deleteUser } = require('../Repositories/userRepository');
 
 router.put('/user/:id', async (req, res) => {
     try {
