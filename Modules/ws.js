@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const { verifyToken } = require('../Services/authService');
-const playerHandler = require('../Handlers/player');
-const itemHandler = require('../Handlers/item');
+const playerHandler = require('../Handlers/movementHandler');
+const itemHandler = require('../Handlers/itemHandler');
 
 const wss = new WebSocket.Server({ noServer: true });
 const activeConnections = new Map(); // In-memory storage for active WebSocket connections
