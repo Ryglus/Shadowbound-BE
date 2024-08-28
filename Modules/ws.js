@@ -22,9 +22,14 @@ function setupWebSocket(server) {
             .then(user => {
                 wss.handleUpgrade(request, socket, head, ws => {
                     console.log("Connected:", user.username);
-                    activeConnections.set(user.id, ws); // Store the WebSocket connection in memory
+                    if(activeConnections.has(user.id)) {
+                        socket.destroy();
+                    } else {
+                        activeConnections.set(user.id, ws); // Store the WebSocket connection in memory
 
-                    wss.emit('connection', ws, user);
+                        wss.emit('connection', ws, user);
+                    }
+
                 });
             })
             .catch(() => {

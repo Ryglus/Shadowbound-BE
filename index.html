@@ -17,6 +17,36 @@
             border: 1px solid #ccc; /* Optional: Adds border around forms */
             border-radius: 5px; /* Optional: Rounds corners of the border */
         }
+        /* Inventory Grid styling */
+        #inventoryGrid {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 5px;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .inventory-slot {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .inventory-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .item {
+            width: 50px;
+            height: 50px;
+            cursor: grab;
+        }
     </style>
 </head>
 <body>
@@ -46,6 +76,16 @@
 </div>
 
 <p id="message"></p>
+
+<hr>
+
+<h2>Inventory</h2>
+<div id="inventorySection" style="display: none;">
+    <div id="inventoryGrid">
+        <!-- Inventory slots will be dynamically generated here -->
+    </div>
+    <button id="addItemButton">Add Item</button>
+</div>
 
 <hr>
 
@@ -130,11 +170,13 @@
 
             // Show the exchange section after successful login
             document.getElementById('exchangeSection').style.display = 'block';
+            document.getElementById('inventorySection').style.display = 'block'; // Show inventory section
 
         } catch (error) {
             console.error('Error:', error);
         }
     });
+
     document.getElementById('registerForm').addEventListener('submit', async (event) => {
         event.preventDefault();
 
@@ -157,67 +199,65 @@
 
             // Show the exchange section after successful login
             document.getElementById('exchangeSection').style.display = 'block';
+            document.getElementById('inventorySection').style.display = 'block'; // Show inventory section
 
         } catch (error) {
             console.error('Error:', error);
         }
     });
-    document.getElementById('listItemForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
 
-        const itemName = document.getElementById('itemName').value;
-        const price = document.getElementById('price').value;
-
-        try {
-            const response = await fetch('http://localhost:3000/api/exchange/listItem', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ itemName, price })
-            });
-
-            if (!response.ok) throw new Error('Failed to list item');
-
-            const data = await response.json();
-            alert(`Item listed: ${data.itemName} for ${data.price} gold`);
-
-        } catch (error) {
-            console.error('Error listing item:', error);
-        }
+    document.getElementById('addItemButton').addEventListener('click', () => {
+        addItemToInventory({ id: Date.now(), name: 'New Item', icon: 'https://via.placeholder.com/50', description: 'A new item' });
     });
 
-    document.getElementById('refreshItemsButton').addEventListener('click', async () => {
-        try {
-            const response = await fetch('http://localhost:3000/api/exchange/getItems', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            if (!response.ok) throw new Error('Failed to fetch items');
+    function addItemToInventory(item) {
+        const grid = document.getElementById('inventoryGrid');
 
-            const items = await response.json();
-            updateItemsTable(items)
+        const slot = document.createElement('div');
+        slot.className = 'inventory-slot';
+        slot.dataset.itemId = item.id;
 
-        } catch (error) {
-            console.error('Error fetching items:', error);
-        }
-    });
+        const itemElement = document.createElement('img');
+        itemElement.src = item.icon;
+        itemElement.alt = item.name;
+        itemElement.title = item.description;
+        itemElement.className = 'item';
 
-    function updateItemsTable(items) {
-        const tableBody = document.getElementById('availableItems').getElementsByTagName('tbody')[0];
+        // Drag and Drop
+        itemElement.draggable = true;
+        itemElement.ondragstart = (event) => {
+            event.dataTransfer.setData('text/plain', item.id);
+        };
 
-        items.forEach(item => {
-            const row = tableBody.insertRow();
-            for (const itemKey of Object.keys(item)) {
-                const cell = row.insertCell(Object.keys(item).indexOf(itemKey));
-                cell.textContent = item[itemKey];
-            }
-
-        });
+        slot.appendChild(itemElement);
+        grid.appendChild(slot);
     }
+
+    // Initialize empty inventory grid
+    function initInventoryGrid() {
+        const grid = document.getElementById('inventoryGrid');
+        grid.innerHTML = ''; // Clear any existing slots/items
+
+        for (let i = 0; i < 25; i++) { // 5x5 grid
+            const slot = document.createElement('div');
+            slot.className = 'inventory-slot';
+
+            // Allow dropping items into slot
+            slot.ondragover = (event) => event.preventDefault();
+            slot.ondrop = (event) => {
+                event.preventDefault();
+                const itemId = event.dataTransfer.getData('text/plain');
+                const draggedItem = document.querySelector(`[data-item-id='${itemId}']`);
+                if (draggedItem) {
+                    slot.appendChild(draggedItem.firstChild);
+                }
+            };
+
+            grid.appendChild(slot);
+        }
+    }
+
+    initInventoryGrid(); // Initialize the inventory grid when the page loads
 </script>
 </body>
 </html>
